@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengumuman Hasil Seleksi ADM17</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .scale-in {
+            animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-white via-blue-50 to-blue-100">
+    <div class="py-8 px-4">
+        <div class="max-w-2xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8 fade-in">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <span class="text-3xl font-bold text-white">A17</span>
+                </div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+                    Pengumuman Hasil Seleksi
+                </h1>
+                <p class="text-lg text-gray-600">ADMIN ANGKATAN 17 Tahun 2025</p>
+            </div>
+
+            <!-- Form Pencarian -->
+            <div id="searchCard" class="bg-white rounded-2xl shadow-xl p-8 md:p-10 fade-in">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">
+                        Cek Hasil Seleksi
+                    </h2>
+                    <p class="text-gray-600">
+                        Masukkan kode peserta untuk melihat hasil seleksi Anda
+                    </p>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Kode Peserta
+                        </label>
+                        <div class="relative">
+                            <input
+                                type="text"
+                                id="kodePeserta"
+                                placeholder="Contoh: ADM17-00"
+                                class="w-full px-4 py-3 pl-12 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-lg"
+                            />
+                            <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div id="errorMessage" class="hidden items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span id="errorText"></span>
+                    </div>
+
+                    <button
+                        id="searchBtn"
+                        onclick="handleSearch()"
+                        class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl"
+                    >
+                        Cek Hasil
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hasil Pencarian (Hidden by default) -->
+            <div id="resultCard" class="hidden rounded-2xl shadow-xl p-8 md:p-10">
+                <div class="text-center">
+                    <div id="iconContainer" class="mb-6"></div>
+                    <h2 id="resultTitle" class="text-4xl md:text-5xl font-bold mb-6"></h2>
+                    <p id="resultMessage" class="text-xl text-gray-700 mb-8"></p>
+
+                    <div class="bg-white rounded-xl p-6 shadow-md mb-8">
+                        <div class="space-y-4 text-left">
+                            <div class="flex justify-between items-center border-b pb-3">
+                                <span class="text-gray-600 font-medium">Nama</span>
+                                <span id="resultNama" class="text-gray-900 font-semibold text-lg"></span>
+                            </div>
+                            <div class="flex justify-between items-center border-b pb-3">
+                                <span class="text-gray-600 font-medium">Kelas</span>
+                                <span id="resultKelas" class="text-gray-900 font-semibold"></span>
+                            </div>
+                            <div class="flex justify-between items-center border-b pb-3">
+                                <span class="text-gray-600 font-medium">Divisi</span>
+                                <span id="resultDivisi" class="text-gray-900 font-semibold"></span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600 font-medium">Kode Peserta</span>
+                                <span id="resultKode" class="text-gray-900 font-semibold"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        onclick="resetSearch()"
+                        class="w-full bg-white text-gray-700 py-3 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-all shadow-md hover:shadow-lg border-2 border-gray-300"
+                    >
+                        Cek Hasil Lagi
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center mt-8 text-gray-600 fade-in">
+                <p class="text-sm">© 2025 ADMINISTRATOR. dibuat oleh divisi programming administrator angkatan 16.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Konfigurasi Supabase - GANTI DENGAN CREDENTIALS ANDA
+        const SUPABASE_URL = 'https://wcughesmjqpvtuhoksvn.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjdWdoZXNtanFwdnR1aG9rc3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NTU0MDgsImV4cCI6MjA3NTIzMTQwOH0.VgzGyc6vhvP-_8mKJxBl2RbtJ5vTwYzsTYvbg8DonWc';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Event listener untuk Enter key
+        document.getElementById('kodePeserta').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+
+        async function handleSearch() {
+            const kodePeserta = document.getElementById('kodePeserta').value.trim();
+            const searchBtn = document.getElementById('searchBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Validasi input
+            if (!kodePeserta) {
+                showError('Silakan masukkan kode peserta');
+                return;
+            }
+
+            // Reset error
+            errorMessage.classList.add('hidden');
+            
+            // Loading state
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = `
+                <span class="flex items-center justify-center gap-2">
+                    <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full spinner"></div>
+                    Mencari...
+                </span>
+            `;
+
+            try {
+                console.log('Mencari data untuk kode:', kodePeserta);
+                console.log('Supabase URL:', SUPABASE_URL);
+                console.log('Tabel: peserta');
+                
+                // Test koneksi dulu
+                const { data: testData, error: testError } = await supabase
+                    .from('peserta')
+                    .select('*')
+                    .limit(1);
+                
+                console.log('Test query (ambil 1 data):', { testData, testError });
+                
+                const { data, error, count } = await supabase
+                    .from('peserta')
+                    .select('*', { count: 'exact' })
+                    .eq('kode_peserta', kodePeserta)
+                    .maybeSingle();
+
+                console.log('Response:', { data, error, count });
+
+                if (error) {
+                    console.error('Supabase error:', error);
+                    showError(`Error: ${error.message || 'Terjadi kesalahan'}`);
+                } else if (!data) {
+                    showError('Kode peserta tidak ditemukan. Pastikan RLS sudah dikonfigurasi dengan benar.');
+                } else {
+                    showResult(data);
+                }
+            } catch (err) {
+                console.error('Catch error:', err);
+                showError(`Kesalahan: ${err.message || 'Terjadi kesalahan koneksi'}`);
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = 'Cek Hasil';
+            }
+        }
+
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+            errorMessage.classList.add('flex');
+        }
+
+        function showResult(data) {
+            const searchCard = document.getElementById('searchCard');
+            const resultCard = document.getElementById('resultCard');
+            const isLolos = data.status.toLowerCase() === 'lolos';
+
+            // Hide search card
+            searchCard.style.display = 'none';
+            
+            // Setup result card
+            resultCard.className = `rounded-2xl shadow-xl p-8 md:p-10 fade-in ${
+                isLolos 
+                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200'
+                    : 'bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200'
+            }`;
+
+            // Setup icon
+            const iconContainer = document.getElementById('iconContainer');
+            if (isLolos) {
+                iconContainer.innerHTML = `
+                    <svg class="w-24 h-24 text-green-600 mx-auto scale-in" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                `;
+            } else {
+                iconContainer.innerHTML = `
+                    <svg class="w-24 h-24 text-red-500 mx-auto scale-in" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                `;
+            }
+
+            // Setup title and message
+            const resultTitle = document.getElementById('resultTitle');
+            const resultMessage = document.getElementById('resultMessage');
+            
+            if (isLolos) {
+                resultTitle.textContent = 'SELAMAT!';
+                resultTitle.className = 'text-4xl md:text-5xl font-bold text-green-700 mb-6';
+                resultMessage.innerHTML = 'Anda dinyatakan <span class="font-bold text-green-700">LOLOS</span> seleksi ADM17';
+            } else {
+                resultTitle.textContent = 'Maaf';
+                resultTitle.className = 'text-3xl md:text-4xl font-bold text-red-700 mb-6';
+                resultMessage.textContent = 'Kamu belum lolos seleksi kali ini. Tetap semangat untuk kesempatan berikutnya!';
+            }
+
+            // Fill data
+            document.getElementById('resultNama').textContent = data.nama;
+            document.getElementById('resultKelas').textContent = data.kelas;
+            document.getElementById('resultDivisi').textContent = data.divisi;
+            document.getElementById('resultKode').textContent = data.kode_peserta;
+
+            // Show result card
+            resultCard.classList.remove('hidden');
+        }
+
+        function resetSearch() {
+            const searchCard = document.getElementById('searchCard');
+            const resultCard = document.getElementById('resultCard');
+            const kodePeserta = document.getElementById('kodePeserta');
+            const errorMessage = document.getElementById('errorMessage');
+
+            // Reset input
+            kodePeserta.value = '';
+            errorMessage.classList.add('hidden');
+            errorMessage.classList.remove('flex');
+
+            // Show search card, hide result
+            searchCard.style.display = 'block';
+            resultCard.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
